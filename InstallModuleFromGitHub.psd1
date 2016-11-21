@@ -1,10 +1,10 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = 'ImportExcel.psm1'
+RootModule = 'InstallModuleFromGitHub.psm1'
 
 # Version number of this module.
-ModuleVersion = '2.2.9'
+ModuleVersion = '0.3'
 
 # ID used to uniquely identify this module
 GUID = '2997e240-5cec-4543-a231-573576b78c88'
@@ -83,7 +83,7 @@ PrivateData = @{
     # https://connect.microsoft.com/PowerShell/feedback/details/421837
     PSData = @{
         # The primary categorization of this module (from the TechNet Gallery tech tree).
-        Category = "Scripting GitHub Modules"
+        Category = "Scripting installation of modules from GitHub"
 
         # Keyword tags to help users find this module via navigations and search.
         Tags = @("GitHub","Install","PowerShell","Module")

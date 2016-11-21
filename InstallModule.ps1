@@ -7,7 +7,8 @@ if(!(Test-Path $TargetPath)) { md $TargetPath | out-null}
 $targetFiles = echo `
     *.psm1 `
     *.psd1 `
-    *.dll `
+    License.txt `
+
 
 
 ls $targetFiles |

@@ -4,7 +4,8 @@ function Install-ModuleFromGitHub {
         $GitHubRepo,
         $Branch="master",
         [Parameter(ValueFromPipelineByPropertyName)]
-        $ProjectUri
+        $ProjectUri,
+        $DestinationPath
     )
 
     Process {
@@ -22,25 +23,36 @@ function Install-ModuleFromGitHub {
                 Write-Verbose ("[$(Get-Date)] Retrieving {0} {1}" -f $GitHubRepo, $Branch)
 
                 $url="https://github.com/{0}/archive/{1}.zip" -f $GitHubRepo, $Branch
-            
-                $OutFile="$($pwd)\$($Branch).zip"
+                $targetModuleName=$GitHubRepo.split('/')[-1]
+
+                $OutPath="$([System.IO.Path]::GetTempPath())\$targetModuleName"
+
+                if(!(Test-Path $OutPath)) {
+                    $null=md $OutPath
+                }
+
+                $OutFile="$($OutPath)\$($Branch).zip"
                 
                 Invoke-RestMethod $url -OutFile $OutFile
                 Unblock-File $OutFile
-                Expand-Archive -Path $OutFile -DestinationPath $pwd -Force
+                Expand-Archive -Path $OutFile -DestinationPath $OutPath -Force
 
-                $targetModuleName=$GitHubRepo.split('/')[-1]
-                $targetModule=".\$($targetModuleName)-$($Branch)"    
+                $targetModule="\$($targetModuleName)-$($Branch)"
                 
-                $dest="C:\Program Files\WindowsPowerShell\Modules\$targetModuleName"
-                $psd1=ls $targetModule *.psd1
+                $dest="C:\Program Files\WindowsPowerShell\Modules"
+                if($DestinationPath) {
+                    $dest=$DestinationPath
+                }
+                $dest+="\$targetModuleName"
+
+                $psd1=ls $OutPath *.psd1 -Recurse
                 
                 if($psd1) {
                     $ModuleVersion=(Get-Content -Raw $psd1.FullName | Invoke-Expression).ModuleVersion
                     $dest+="\$($ModuleVersion)"
                 }        
                 
-                $null=Robocopy.exe $targetModule $dest /mir
+                $null=Robocopy.exe "$($OutPath)\$($targetModule)" $dest /mir
         }
     }
 }

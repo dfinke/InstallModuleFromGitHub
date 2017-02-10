@@ -21,27 +21,24 @@ function Install-ModuleFromGitHub {
 
         if($GitHubRepo) {
                 Write-Verbose ("[$(Get-Date)] Retrieving {0} {1}" -f $GitHubRepo, $Branch)
-                Write-Debug "PSModulePath: $PSModulePath"
 
                 $url = "https://github.com/{0}/archive/{1}.zip" -f $GitHubRepo, $Branch
                 $targetModuleName=$GitHubRepo.split('/')[-1]
+                Write-Debug "targetModuleName: $targetModuleName"
 
-                $OutPath = Join-Path -Path "$([System.IO.Path]::GetTempPath())" -ChildPath "$targetModuleName"
-                Write-Debug "OutPath: $OutPath"
-                if(!(Test-Path $OutPath)) {
-                    $null = md $OutPath
-                }
+                $tmpDir = [System.IO.Path]::GetTempPath()
 
-                $OutFile = Join-Path -Path $OutPath -ChildPath "$($Branch).zip"
+                $OutFile = Join-Path -Path $tmpDir -ChildPath "$($targetModuleName).zip"
                 Write-Debug "OutFile: $OutFile"
 
                 Invoke-RestMethod $url -OutFile $OutFile
                 if ($IsWindows) {
                   Unblock-File $OutFile
                 }
-                Expand-Archive -Path $OutFile -DestinationPath $OutPath -Force
+                Expand-Archive -Path $OutFile -DestinationPath $tmpDir -Force
 
-                $targetModule = Join-Path -Path $targetModuleName -ChildPath $Branch
+                $unzippedArchive = "$($targetModuleName)-$($Branch)"
+                Write-Debug "targetModule: $targetModule"
 
                 if ($IsWindows) {
                   $dest = "C:\Program Files\WindowsPowerShell\Modules"
@@ -55,15 +52,16 @@ function Install-ModuleFromGitHub {
                     $dest = $DestinationPath
                 }
                 $dest = Join-Path -Path $dest -ChildPath $targetModuleName
+                Write-Debug "dest: $dest"
 
-                $psd1 = Get-ChildItem $OutPath -Include *.psd1 -Recurse
+                $psd1 = Get-ChildItem (Join-Path -Path $tmpDir -ChildPath $unzippedArchive) -Include *.psd1 -Recurse
 
                 if($psd1) {
                     $ModuleVersion=(Get-Content -Raw $psd1.FullName | Invoke-Expression).ModuleVersion
                     $dest = Join-Path -Path $dest -ChildPath $ModuleVersion
                 }
 
-                $null = Copy-Item "$(Join-Path -Path $OutPath -ChildPath $targetModule)/*" $dest -Force
+                $null = Copy-Item "$(Join-Path -Path $tmpDir -ChildPath $unzippedArchive)/*" $dest -Force
         }
     }
 }

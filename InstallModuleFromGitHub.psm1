@@ -31,21 +31,27 @@ function Install-ModuleFromGitHub {
                 $OutFile = Join-Path -Path $tmpDir -ChildPath "$($targetModuleName).zip"
                 Write-Debug "OutFile: $OutFile"
 
-                Invoke-RestMethod $url -OutFile $OutFile
-                if ($IsWindows) {
+
+                if ($IsLinux -or $IsOSX) {
+                  Invoke-RestMethod $url -OutFile $OutFile
+                }
+
+                else {
+                  Invoke-RestMethod $url -OutFile $OutFile
                   Unblock-File $OutFile
                 }
+
                 Expand-Archive -Path $OutFile -DestinationPath $tmpDir -Force
 
                 $unzippedArchive = "$($targetModuleName)-$($Branch)"
                 Write-Debug "targetModule: $targetModule"
 
-                if ($IsWindows) {
-                  $dest = "C:\Program Files\WindowsPowerShell\Modules"
+                if ($IsLinux -or $IsOSX) {
+                  $dest = Join-Path -Path $HOME -ChildPath ".local/share/powershell/Modules"
                 }
 
                 else {
-                  $dest = Join-Path -Path $HOME -ChildPath ".local/share/powershell/Modules"
+                  $dest = "C:\Program Files\WindowsPowerShell\Modules"
                 }
 
                 if($DestinationPath) {

@@ -6,6 +6,8 @@ function Install-ModuleFromGitHub {
         [Parameter(ValueFromPipelineByPropertyName)]
         $ProjectUri,
         $DestinationPath,
+        [ValidateSet('CurrentUser', 'AllUsers')]
+        [string] $Scope = "AllUsers",
         $SSOToken,
         $moduleName
     )
@@ -59,10 +61,15 @@ function Install-ModuleFromGitHub {
 
                 if ($IsLinux -or $IsOSX) {
                   $dest = Join-Path -Path $HOME -ChildPath ".local/share/powershell/Modules"
-                }
-
-                else {
-                  $dest = "C:\Program Files\WindowsPowerShell\Modules"
+                } else {
+                  switch ($Scope) {
+                    'CurrentUser' { 
+                      $dest = ($env:PSModulePath -split ';' -match 'Documents')[0]
+                    }
+                    'AllUsers' {
+                      $dest = "C:\Program Files\WindowsPowerShell\Modules"
+                    }
+                  }
                 }
 
                 if($DestinationPath) {

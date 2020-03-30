@@ -6,6 +6,8 @@ function Install-ModuleFromGitHub {
         [Parameter(ValueFromPipelineByPropertyName)]
         $ProjectUri,
         $DestinationPath,
+        [ValidateSet('CurrentUser', 'AllUsers')]
+        [string] $Scope = "AllUsers",
         $SSOToken,
         $moduleName
     )
@@ -59,10 +61,15 @@ function Install-ModuleFromGitHub {
 
                 if ($IsLinux -or $IsOSX) {
                   $dest = Join-Path -Path $HOME -ChildPath ".local/share/powershell/Modules"
-                }
-
-                else {
-                  $dest = "C:\Program Files\WindowsPowerShell\Modules"
+                } else {
+                  switch ($Scope) {
+                    'CurrentUser' { 
+                      $dest = ($env:PSModulePath -split ';' -match 'Documents')[0]
+                    }
+                    'AllUsers' {
+                      $dest = "C:\Program Files\WindowsPowerShell\Modules"
+                    }
+                  }
                 }
 
                 if($DestinationPath) {
@@ -73,11 +80,16 @@ function Install-ModuleFromGitHub {
                 $psd1 = Get-ChildItem (Join-Path -Path $tmpDir -ChildPath $unzippedArchive) -Include *.psd1 -Recurse
 
                 if($psd1) {
+                    # The source is the .psd1 file's immediate parent directory
+                    $src = $psd1.Directory.FullName
+                    # PowerShell module directory structure is modulename/version/files
                     $ModuleVersion=(Get-Content -Raw $psd1.FullName | Invoke-Expression).ModuleVersion
                     $dest = Join-Path -Path $dest -ChildPath $ModuleVersion
                     $null = New-Item -ItemType directory -Path $dest -Force
+                } else {
+                    $src = Join-Path -Path $tmpDir -ChildPath $unzippedArchive
                 }
-                $null = Copy-Item "$(Join-Path -Path $tmpDir -ChildPath $unzippedArchive)/*" $dest -Force
+                $null = Copy-Item "$src/*" $dest -Force
         }
     }
 }

@@ -5,7 +5,9 @@ function Install-ModuleFromGitHub {
         $Branch = "master",
         [Parameter(ValueFromPipelineByPropertyName)]
         $ProjectUri,
-        $DestinationPath
+        $DestinationPath,
+        $SSOToken,
+        $moduleName
     )
 
     Process {
@@ -22,28 +24,37 @@ function Install-ModuleFromGitHub {
         if($GitHubRepo) {
                 Write-Verbose ("[$(Get-Date)] Retrieving {0} {1}" -f $GitHubRepo, $Branch)
 
-                $url = "https://github.com/{0}/archive/{1}.zip" -f $GitHubRepo, $Branch
-                $targetModuleName=$GitHubRepo.split('/')[-1]
-                Write-Debug "targetModuleName: $targetModuleName"
+                $url = "https://api.github.com/repos/{0}/zipball/{1}" -f $GitHubRepo, $Branch
 
+                if ($moduleName) {
+                    $targetModuleName = $moduleName
+                } else {
+                    $targetModuleName=$GitHubRepo.split('/')[-1]
+                }
+                Write-Debug "targetModuleName: $targetModuleName"
+                
                 $tmpDir = [System.IO.Path]::GetTempPath()
 
                 $OutFile = Join-Path -Path $tmpDir -ChildPath "$($targetModuleName).zip"
                 Write-Debug "OutFile: $OutFile"
 
+                if ($SSOToken) {$headers = @{"Authorization" = "token $SSOToken" }}
 
-                if ($IsLinux -or $IsOSX) {
-                  Invoke-RestMethod $url -OutFile $OutFile
+                #enable TLS1.2 encryption
+                if (-not ($IsLinux -or $IsOSX)) {
+                    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
                 }
-
-                else {
-                  Invoke-RestMethod $url -OutFile $OutFile
+                Invoke-RestMethod $url -OutFile $OutFile -Headers $headers
+                if (-not ($IsLinux -or $IsOSX)) {
                   Unblock-File $OutFile
                 }
+                
+                $fileHash = $(Get-FileHash -Path $OutFile).hash
+                $tmpDir = "$tmpDir/$fileHash"
 
                 Expand-Archive -Path $OutFile -DestinationPath $tmpDir -Force
 
-                $unzippedArchive = "$($targetModuleName)-$($Branch)"
+                $unzippedArchive = get-childItem "$tmpDir"
                 Write-Debug "targetModule: $targetModule"
 
                 if ($IsLinux -or $IsOSX) {
@@ -58,19 +69,20 @@ function Install-ModuleFromGitHub {
                     $dest = $DestinationPath
                 }
                 $dest = Join-Path -Path $dest -ChildPath $targetModuleName
-                Write-Debug "dest: $dest"
-
+                
                 $psd1 = Get-ChildItem (Join-Path -Path $tmpDir -ChildPath $unzippedArchive) -Include *.psd1 -Recurse
 
                 if($psd1) {
                     $ModuleVersion=(Get-Content -Raw $psd1.FullName | Invoke-Expression).ModuleVersion
                     $dest = Join-Path -Path $dest -ChildPath $ModuleVersion
+                    $null = New-Item -ItemType directory -Path $dest -Force
                 }
 
                 $null = Copy-Item "$(Join-Path -Path $tmpDir -ChildPath $unzippedArchive)" $dest -Force -Recurse
+
         }
     }
 }
 
-# Install-PSModuleFromGitHub dfinke/nameit
-# Install-PSModuleFromGitHub dfinke/nameit TestBranch
+# Install-ModuleFromGitHub dfinke/nameit
+# Install-ModuleFromGitHub dfinke/nameit TestBranch

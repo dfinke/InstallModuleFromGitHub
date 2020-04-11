@@ -77,7 +77,9 @@ function Install-ModuleFromGitHub {
                     $dest = Join-Path -Path $dest -ChildPath $ModuleVersion
                     $null = New-Item -ItemType directory -Path $dest -Force
                 }
-                $null = Copy-Item "$(Join-Path -Path $tmpDir -ChildPath $unzippedArchive)/*" $dest -Force
+
+                $null = Copy-Item "$(Join-Path -Path $tmpDir -ChildPath $unzippedArchive)" $dest -Force -Recurse
+
         }
     }
 }

@@ -4,7 +4,7 @@
 RootModule = 'InstallModuleFromGitHub.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.5.0'
+ModuleVersion = '1.3.0'
 
 # ID used to uniquely identify this module
 GUID = '2997e240-5cec-4543-a231-573576b78c88'

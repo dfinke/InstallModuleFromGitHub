@@ -7,6 +7,10 @@ Not all PowerShell Modules are published to the PowerShellGallery but are hosted
 
 ##  Changes 
 
+## 1.4.0
+
+- Fix module installation path (Thanks [JonathanPitre](https://github.com/JonathanPitre))
+
 ## v 0.5.0
 
 - Allow for copying folders recursively. Thank you to:

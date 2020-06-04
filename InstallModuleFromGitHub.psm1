@@ -32,7 +32,7 @@ function Install-ModuleFromGitHub {
                     $targetModuleName=$GitHubRepo.split('/')[-1]
                 }
                 Write-Debug "targetModuleName: $targetModuleName"
-                
+
                 $tmpDir = [System.IO.Path]::GetTempPath()
 
                 $OutFile = Join-Path -Path $tmpDir -ChildPath "$($targetModuleName).zip"
@@ -48,7 +48,7 @@ function Install-ModuleFromGitHub {
                 if (-not ($IsLinux -or $IsOSX)) {
                   Unblock-File $OutFile
                 }
-                
+
                 $fileHash = $(Get-FileHash -Path $OutFile).hash
                 $tmpDir = "$tmpDir/$fileHash"
 
@@ -69,7 +69,7 @@ function Install-ModuleFromGitHub {
                     $dest = $DestinationPath
                 }
                 $dest = Join-Path -Path $dest -ChildPath $targetModuleName
-                
+
                 $psd1 = Get-ChildItem (Join-Path -Path $tmpDir -ChildPath $unzippedArchive) -Include *.psd1 -Recurse
 
                 if($psd1) {
@@ -78,7 +78,7 @@ function Install-ModuleFromGitHub {
                     $null = New-Item -ItemType directory -Path $dest -Force
                 }
 
-                $null = Copy-Item "$(Join-Path -Path $tmpDir -ChildPath $unzippedArchive)" $dest -Force -Recurse
+                $null = Copy-Item "$(Join-Path -Path $tmpDir -ChildPath $unzippedArchive\*)" $dest -Force -Recurse
 
         }
     }

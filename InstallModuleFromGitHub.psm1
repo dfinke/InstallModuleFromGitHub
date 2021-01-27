@@ -2,9 +2,9 @@ function Install-ModuleFromGitHub {
     [CmdletBinding()]
     param(
         $GitHubRepo,
-        $Branch = "master",
+        $Branch = 'main',
         [Parameter(ValueFromPipelineByPropertyName)]
-        $ProjectUri,
+        [System.Uri]$ProjectUri,
         $DestinationPath,
         $SSOToken,
         $moduleName
@@ -24,7 +24,7 @@ function Install-ModuleFromGitHub {
         if($GitHubRepo) {
                 Write-Verbose ("[$(Get-Date)] Retrieving {0} {1}" -f $GitHubRepo, $Branch)
 
-                $url = "https://api.github.com/repos/{0}/zipball/{1}" -f $GitHubRepo, $Branch
+                $url = "https://api.github.com/repos{0}/zipball/{1}" -f $GitHubRepo, $Branch
 
                 if ($moduleName) {
                     $targetModuleName = $moduleName

@@ -42,7 +42,7 @@ function Install-ModuleFromGitHub {
                 if ($SSOToken) {$headers = @{"Authorization" = "token $SSOToken" }}
 
                 #enable TLS1.2 encryption
-                if (-not ([System.Environment]::OSVersion.Platform -eq "Unix")) {
+                if (-not ($IsLinux -or $IsMacOS)) {
                     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
                 }
                 Invoke-RestMethod $url -OutFile $OutFile -Headers $headers
@@ -68,7 +68,7 @@ function Install-ModuleFromGitHub {
                         $scopedChildPath = "\Documents\WindowsPowerShell\Modules"
                     } else {
                         $scopedPath = $env:ProgramFiles
-                        $scopedChildPath = "C:\Program Files\WindowsPowerShell\Modules"
+                        $scopedChildPath = "\WindowsPowerShell\Modules"
                     }
                   $dest = Join-Path -Path $scopedPath -ChildPath $scopedChildPath
                 }
@@ -83,6 +83,7 @@ function Install-ModuleFromGitHub {
                     $psd1 = Get-ChildItem (Join-Path -Path $tmpDir -ChildPath $unzippedArchive) -Include *.psd1 -Recurse
                 }
                 
+
                 if($psd1) {
                     $ModuleVersion=(Get-Content -Raw $psd1.FullName | Invoke-Expression).ModuleVersion
                     $dest = Join-Path -Path $dest -ChildPath $ModuleVersion

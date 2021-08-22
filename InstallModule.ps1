@@ -1,17 +1,12 @@
-$ModuleName   = "InstallModuleFromGitHub"
-$ModulePath   = "C:\Program Files\WindowsPowerShell\Modules"
-$TargetPath = "$($ModulePath)\$($ModuleName)"
+param ($fullPath)
 
-if(!(Test-Path $TargetPath)) { md $TargetPath | out-null}
+if (-not $fullPath) {
+    $fullpath = $env:PSModulePath -split ":(?!\\)|;|," |
+    Where-Object { $_ -notlike ([System.Environment]::GetFolderPath("UserProfile") + "*") -and $_ -notlike "$pshome*" } |
+    Select-Object -First 1
+    $fullPath = Join-Path $fullPath -ChildPath "InstallModuleFromGitHub"    
+}
 
-$targetFiles = echo `
-    *.psm1 `
-    *.psd1 `
-    License.txt `
-
-
-
-ls $targetFiles |
-    ForEach {
-        Copy-Item -Verbose -Path $_.FullName -Destination "$($TargetPath)\$($_.name)"
-    }
+Push-location $PSScriptRoot
+Robocopy . $fullPath /mir /XD .vscode .git CI __tests__ data mdHelp /XF appveyor.yml azure-pipelines.yml .gitattributes .gitignore filelist.txt install.ps1 InstallModule.ps1
+Pop-Location

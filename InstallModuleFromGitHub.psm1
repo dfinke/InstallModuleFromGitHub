@@ -7,7 +7,8 @@ function Install-ModuleFromGitHub {
         $ProjectUri,
         $DestinationPath,
         $SSOToken,
-        $moduleName
+        $moduleName,
+        $Scope
     )
 
     Process {
@@ -41,11 +42,11 @@ function Install-ModuleFromGitHub {
                 if ($SSOToken) {$headers = @{"Authorization" = "token $SSOToken" }}
 
                 #enable TLS1.2 encryption
-                if (-not ($IsLinux -or $IsOSX)) {
+                if (-not ($IsLinux -or $IsMacOS)) {
                     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
                 }
                 Invoke-RestMethod $url -OutFile $OutFile -Headers $headers
-                if (-not ($IsLinux -or $IsOSX)) {
+                if (-not ([System.Environment]::OSVersion.Platform -eq "Unix")) {
                   Unblock-File $OutFile
                 }
 
@@ -57,20 +58,31 @@ function Install-ModuleFromGitHub {
                 $unzippedArchive = get-childItem "$tmpDir"
                 Write-Debug "targetModule: $targetModule"
 
-                if ($IsLinux -or $IsOSX) {
+                if ([System.Environment]::OSVersion.Platform -eq "Unix") {
                   $dest = Join-Path -Path $HOME -ChildPath ".local/share/powershell/Modules"
                 }
 
                 else {
-                  $dest = "C:\Program Files\WindowsPowerShell\Modules"
+                    if ($Scope = "CurrentUser") {
+                        $scopedPath = $HOME
+                        $scopedChildPath = "\Documents\WindowsPowerShell\Modules"
+                    } else {
+                        $scopedPath = $env:ProgramFiles
+                        $scopedChildPath = "\WindowsPowerShell\Modules"
+                    }
+                  $dest = Join-Path -Path $scopedPath -ChildPath $scopedChildPath
                 }
 
                 if($DestinationPath) {
                     $dest = $DestinationPath
                 }
                 $dest = Join-Path -Path $dest -ChildPath $targetModuleName
-
-                $psd1 = Get-ChildItem (Join-Path -Path $tmpDir -ChildPath $unzippedArchive) -Include *.psd1 -Recurse
+                if ([System.Environment]::OSVersion.Platform -eq "Unix") {
+                    $psd1 = Get-ChildItem (Join-Path -Path $unzippedArchive -ChildPath *) -Include *.psd1 -Recurse
+                } else {
+                    $psd1 = Get-ChildItem (Join-Path -Path $tmpDir -ChildPath $unzippedArchive) -Include *.psd1 -Recurse
+                }
+                
 
                 if($psd1) {
                     $ModuleVersion=(Get-Content -Raw $psd1.FullName | Invoke-Expression).ModuleVersion
@@ -78,8 +90,11 @@ function Install-ModuleFromGitHub {
                     $null = New-Item -ItemType directory -Path $dest -Force
                 }
 
-                $null = Copy-Item "$(Join-Path -Path $tmpDir -ChildPath $unzippedArchive\*)" $dest -Force -Recurse
-
+                if ([System.Environment]::OSVersion.Platform -eq "Unix") {
+                    $null = Copy-Item "$(Join-Path -Path $unzippedArchive -ChildPath *)" $dest -Force -Recurse
+                } else {
+                    $null = Copy-Item "$(Join-Path -Path $tmpDir -ChildPath $unzippedArchive\*)" $dest -Force -Recurse
+                }
         }
     }
 }

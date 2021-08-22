@@ -7,6 +7,14 @@ Not all PowerShell Modules are published to the PowerShellGallery but are hosted
 
 ##  Changes 
 
+## 1.5.0
+
+Thank you to [Max Renner](https://github.com/rennerom) for the pull request.
+
+- Use  [System.Environment]::OSVersion.Platform -eq "Unix" as a catch all for non-windows systems
+- Replaced the hard coded Module paths assigned to $dest with environment variables instead.
+- Added if logic for Windows vs Non-Windows machines in assigning $psd1 and in the final Copy-Item statement.
+
 ## 1.4.0
 
 - Fix module installation path (Thanks [JonathanPitre](https://github.com/JonathanPitre))

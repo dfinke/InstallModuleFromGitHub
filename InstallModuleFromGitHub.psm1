@@ -59,16 +59,20 @@ function Install-ModuleFromGitHub {
                 Write-Debug "targetModule: $targetModule"
 
                 if ([System.Environment]::OSVersion.Platform -eq "Unix") {
-                  $dest = Join-Path -Path $HOME -ChildPath ".local/share/powershell/Modules"
+                    if ($Scope = "CurrentUser") {
+                        $dest = Join-Path -Path $HOME -ChildPath ".local/share/powershell/Modules"
+                    } else {
+                        $dest = "/usr/local/share/powershell/Modules"
+                    }
                 }
 
                 else {
                     if ($Scope = "CurrentUser") {
                         $scopedPath = $HOME
-                        $scopedChildPath = "\Documents\WindowsPowerShell\Modules"
+                        $scopedChildPath = "\Documents\PowerShell\Modules"
                     } else {
                         $scopedPath = $env:ProgramFiles
-                        $scopedChildPath = "\WindowsPowerShell\Modules"
+                        $scopedChildPath = "\PowerShell\Modules"
                     }
                   $dest = Join-Path -Path $scopedPath -ChildPath $scopedChildPath
                 }
@@ -81,8 +85,7 @@ function Install-ModuleFromGitHub {
                     $psd1 = Get-ChildItem (Join-Path -Path $unzippedArchive -ChildPath *) -Include *.psd1 -Recurse
                 } else {
                     $psd1 = Get-ChildItem (Join-Path -Path $tmpDir -ChildPath $unzippedArchive) -Include *.psd1 -Recurse
-                }
-                
+                } 
 
                 if($psd1) {
                     $ModuleVersion=(Get-Content -Raw $psd1.FullName | Invoke-Expression).ModuleVersion

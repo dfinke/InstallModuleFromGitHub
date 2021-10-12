@@ -8,8 +8,9 @@ function Install-ModuleFromGitHub
         $ProjectUri,
         $DestinationPath,
         $SSOToken,
-        $moduleName,
-        $Scope
+        $ModuleName,
+        [ValidateSet('CurrentUser', 'AllUsers')]
+        [string] $Scope = 'AllUsers'
     )
 
     Process
@@ -23,8 +24,8 @@ function Install-ModuleFromGitHub
             }
             else
             {
-                $name = $ProjectUri.LocalPath.split('/')[-1]
-                Write-Host -ForegroundColor Red ('Module [{0}]: not installed, it is not hosted on GitHub ' -f $name)
+                $Name = $ProjectUri.LocalPath.split('/')[-1]
+                Write-Host -ForegroundColor Red ('Module [{0}]: not installed, it is not hosted on GitHub ' -f $Name)
             }
         }
 
@@ -34,9 +35,9 @@ function Install-ModuleFromGitHub
 
             $url = 'https://api.github.com/repos/{0}/zipball/{1}' -f $GitHubRepo, $Branch
 
-            if ($moduleName)
+            if ($ModuleName)
             {
-                $targetModuleName = $moduleName
+                $targetModuleName = $ModuleName
             }
             else
             {
@@ -71,37 +72,34 @@ function Install-ModuleFromGitHub
 
             $unzippedArchive = Get-ChildItem "$tmpDir"
             Write-Debug "targetModule: $targetModule"
-            if ([System.Environment]::OSVersion.Platform -eq 'Unix')
+            if($IsLinux -or $IsMacOS)
             {
                 if ($Scope -eq 'CurrentUser')
                 {
-                    $dest = Join-Path -Path $HOME -ChildPath '.local/share/powershell/Modules'
+                    $DestinationPath = Join-Path -Path $HOME -ChildPath '.local/share/powershell/Modules'
                 }
                 else
                 {
-                    $dest = '/usr/local/share/powershell/Modules'
+                    $DestinationPath = '/usr/local/share/powershell/Modules'
                 }
             }
             else
             {
-                if ($Scope -eq 'CurrentUser')
+                switch ($Scope)
                 {
-                    $scopedPath = [Environment]::GetFolderPath('MyDocuments')
-                    $scopedChildPath = '\PowerShell\Modules'
+                    'CurrentUser'
+                    {
+                        $DestinationPath = "$([Environment]::GetFolderPath('MyDocuments'))\WindowsPowerShell\Modules"
+                    }
+                    'AllUsers'
+                    {
+                        $DestinationPath = "$($env:ProgramFiles)\WindowsPowerShell\Modules"
+                    }
                 }
-                else
-                {
-                    $scopedPath = $env:ProgramFiles
-                    $scopedChildPath = '\WindowsPowerShell\Modules'
-                }
-                $dest = Join-Path -Path $scopedPath -ChildPath $scopedChildPath
             }
-            if($DestinationPath)
-            {
-                $dest = $DestinationPath
-            }
-            $dest = Join-Path -Path $dest -ChildPath $targetModuleName
-            if ([System.Environment]::OSVersion.Platform -eq 'Unix')
+            $DestinationPath = Join-Path -Path $DestinationPath -ChildPath $targetModuleName
+            Write-Verbose "The module will be saved to '$DestinationPath'."
+            if($IsLinux -or $IsMacOS)
             {
                 $psd1 = Get-ChildItem (Join-Path -Path $unzippedArchive -ChildPath *) -Include *.psd1 -Recurse
             }
@@ -113,27 +111,27 @@ function Install-ModuleFromGitHub
             if($psd1)
             {
                 $ModuleVersion = (Get-Content -Raw $psd1.FullName | Invoke-Expression).ModuleVersion
-                $dest = Join-Path -Path $dest -ChildPath $ModuleVersion
+                $DestinationPath = Join-Path -Path $DestinationPath -ChildPath $ModuleVersion
                 try
                 {
-                    $null = New-Item -ItemType directory -Path $dest -Force -ErrorAction Stop
+                    $null = New-Item -ItemType directory -Path $DestinationPath -Force -ErrorAction Stop
                 }
                 catch
                 {
-                    Write-Error "Unable to create the folder '$dest'. Try again running as Administrator."
+                    Write-Error "Unable to create the folder '$DestinationPath'. Try again running as Administrator."
                     break
                 }
             }
 
-            if ([System.Environment]::OSVersion.Platform -eq 'Unix')
+            if($IsLinux -or $IsMacOS)
             {
-                $null = Copy-Item "$(Join-Path -Path $unzippedArchive -ChildPath *)" $dest -Force -Recurse
+                $null = Copy-Item "$(Join-Path -Path $unzippedArchive -ChildPath *)" $DestinationPath -Force -Recurse
             }
             else
             {
                 try
                 {
-                    $null = Copy-Item "$(Join-Path -Path $tmpDir -ChildPath $unzippedArchive\*)" $dest -Force -Recurse -ErrorAction Stop
+                    $null = Copy-Item "$(Join-Path -Path $tmpDir -ChildPath $unzippedArchive\*)" $DestinationPath -Force -Recurse -ErrorAction Stop
                 }
                 catch
                 {
@@ -144,6 +142,3 @@ function Install-ModuleFromGitHub
         }
     }
 }
-
-# Install-ModuleFromGitHub dfinke/nameit
-# Install-ModuleFromGitHub dfinke/nameit TestBranch

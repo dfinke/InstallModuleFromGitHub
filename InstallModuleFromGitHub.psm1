@@ -59,7 +59,7 @@ function Install-ModuleFromGitHub {
                 Write-Debug "targetModule: $targetModule"
 
                 if ([System.Environment]::OSVersion.Platform -eq "Unix") {
-                    if ($Scope = "CurrentUser") {
+                    if ($Scope -eq "CurrentUser") {
                         $dest = Join-Path -Path $HOME -ChildPath ".local/share/powershell/Modules"
                     } else {
                         $dest = "/usr/local/share/powershell/Modules"
@@ -67,7 +67,7 @@ function Install-ModuleFromGitHub {
                 }
 
                 else {
-                    if ($Scope = "CurrentUser") {
+                    if ($Scope -eq "CurrentUser") {
                         $scopedPath = $HOME
                         $scopedChildPath = "\Documents\PowerShell\Modules"
                     } else {

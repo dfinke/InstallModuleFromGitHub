@@ -84,19 +84,24 @@ function Install-ModuleFromGitHub {
                 if ([System.Environment]::OSVersion.Platform -eq "Unix") {
                     $psd1 = Get-ChildItem (Join-Path -Path $unzippedArchive -ChildPath *) -Include *.psd1 -Recurse
                 } else {
-                    $psd1 = Get-ChildItem (Join-Path -Path $tmpDir -ChildPath $unzippedArchive) -Include *.psd1 -Recurse
+                    $psd1 = Get-ChildItem (Join-Path -Path $tmpDir -ChildPath $unzippedArchive.Name) -Include *.psd1 -Recurse
                 } 
+
+                $sourcePath = $unzippedArchive.FullName
 
                 if($psd1) {
                     $ModuleVersion=(Get-Content -Raw $psd1.FullName | Invoke-Expression).ModuleVersion
                     $dest = Join-Path -Path $dest -ChildPath $ModuleVersion
                     $null = New-Item -ItemType directory -Path $dest -Force
+                    $sourcePath = $psd1.DirectoryName
                 }
+
+
 
                 if ([System.Environment]::OSVersion.Platform -eq "Unix") {
                     $null = Copy-Item "$(Join-Path -Path $unzippedArchive -ChildPath *)" $dest -Force -Recurse
                 } else {
-                    $null = Copy-Item "$(Join-Path -Path $tmpDir -ChildPath $unzippedArchive\*)" $dest -Force -Recurse
+                    $null = Copy-Item "$sourcePath\*" $dest -Force -Recurse
                 }
         }
     }

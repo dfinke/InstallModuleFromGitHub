@@ -7,6 +7,13 @@ Not all PowerShell Modules are published to the PowerShellGallery but are hosted
 
 ##  Changes 
 
+## 1.6.0
+
+via https://github.com/dfinke/InstallModuleFromGitHub/pull/25
+
+- on non-unix platforms, fixed the psd1 file search
+join-path on line 87 was joining two full paths, which is not a
+valid result.
 ## 1.5.0
 
 Thank you to [Max Renner](https://github.com/rennerom) for the pull request.

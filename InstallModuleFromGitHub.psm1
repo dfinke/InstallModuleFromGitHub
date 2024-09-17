@@ -8,6 +8,8 @@ function Install-ModuleFromGitHub {
         $DestinationPath,
         $SSOToken,
         $moduleName,
+        [ValidateSet('CurrentUser','AllUsers')]
+        [string]
         $Scope
     )
 
